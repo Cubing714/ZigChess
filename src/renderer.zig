@@ -4,6 +4,7 @@ pub const sdl = @cImport({
     @cInclude("SDL_image.h");
 });
 
+const m_piece = @import("piece.zig");
 const Piece = @import("piece.zig").Piece;
 const Color = @import("piece.zig").Color;
 const PieceType = @import("piece.zig").PieceType;
@@ -11,14 +12,15 @@ const Board = @import("board.zig").Board;
 const ROW_SIZE = @import("board.zig").ROW_SIZE;
 const COL_SIZE = @import("board.zig").COL_SIZE;
 
-const WINDOW_WIDTH = 1600;
-const WINDOW_HEIGHT = 900;
+pub const WINDOW_WIDTH = 1600;
+pub const WINDOW_HEIGHT = 900;
+pub const SQUARE_SIZE = 100;
 
 pub const rect = sdl.SDL_Rect{
-    .x = (WINDOW_WIDTH - 800) / 2, // X pos in pixels
-    .y = (WINDOW_HEIGHT - 800) / 2, // Y pos in pixels
-    .w = 100, // Width
-    .h = 100, // Height
+    .x = (WINDOW_WIDTH - (SQUARE_SIZE * COL_SIZE)) / 2, // X pos in pixels
+    .y = (WINDOW_HEIGHT - (SQUARE_SIZE * COL_SIZE)) / 2, // Y pos in pixels
+    .w = SQUARE_SIZE, // Width
+    .h = SQUARE_SIZE, // Height
 };
 
 pub const Renderer = struct {
@@ -121,5 +123,30 @@ pub const Renderer = struct {
                 }
             }
         }
+    }
+
+    pub fn checkMouseEvents(self: *Renderer, board: *Board) void {
+        var mouse_x: i32 = undefined;
+        var mouse_y: i32 = undefined;
+        _ = sdl.SDL_GetMouseState(&mouse_x, &mouse_y);
+
+        if (m_piece.displayCoordsToBoardIdx(mouse_x, mouse_y)) |hover| {
+            drawHoverSquare(self, board, hover.row, hover.col);
+            //std.debug.print("Hovered square: ( {d} ,  {d} )\n", .{ hover.col, hover.row });
+        } else {
+            //std.debug.print("Not over board\n", .{});
+        }
+
+        //_ = self;
+    }
+
+    pub fn drawHoverSquare(self: *Renderer, board: *Board, row: usize, col: usize) void {
+        const piece = board.board[row][col];
+
+        const hover_rect = piece.sdl_rect;
+
+        _ = sdl.SDL_SetRenderDrawBlendMode(self.sdl_r, sdl.SDL_BLENDMODE_BLEND);
+        _ = sdl.SDL_SetRenderDrawColor(self.sdl_r, 255, 255, 0, 100);
+        _ = sdl.SDL_RenderFillRect(self.sdl_r, &hover_rect);
     }
 };

@@ -28,7 +28,10 @@ pub fn main() !void {
         }
         renderer.clear();
         renderer.drawCheckerBoard();
+        renderer.checkMouseEvents(&board);
         renderer.drawPieces(&board);
         renderer.present();
+
+        std.time.sleep(500);
     }
 }

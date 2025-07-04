@@ -60,6 +60,8 @@ pub const Piece = struct {
         const type_str = pieceTypeToStr(self.ptype);
         const path = try std.fmt.bufPrintZ(buffer[0..], "./assets/textures/{s}-{s}.png", .{ color_str, type_str });
 
+        _ = sdl.SDL_SetHint(sdl.SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+
         self.texture = sdl.IMG_LoadTexture(sdl_r, path.ptr);
         if (self.texture == null) {
             std.debug.print("IMG_LoadTexture Error: {s}", .{sdl.SDL_GetError()});
@@ -67,3 +69,39 @@ pub const Piece = struct {
         }
     }
 };
+
+const SQUARE_SIZE = @import("renderer.zig").SQUARE_SIZE;
+const WINDOW_WIDTH = @import("renderer.zig").WINDOW_WIDTH;
+const WINDOW_HEIGHT = @import("renderer.zig").WINDOW_HEIGHT;
+const ROW_SIZE = @import("board.zig").ROW_SIZE;
+const COL_SIZE = @import("board.zig").COL_SIZE;
+
+pub fn displayCoordsToBoardIdx(x: i32, y: i32) ?struct { row: usize, col: usize } {
+    const board_bound_box = sdl.SDL_Rect{
+        .x = (WINDOW_WIDTH - (SQUARE_SIZE * COL_SIZE)) / 2,
+        .y = (WINDOW_HEIGHT - (SQUARE_SIZE * COL_SIZE)) / 2,
+        .w = COL_SIZE * SQUARE_SIZE,
+        .h = ROW_SIZE * SQUARE_SIZE,
+    };
+
+    const point = sdl.SDL_Point{
+        .x = @intCast(x),
+        .y = @intCast(y),
+    };
+
+    if (sdl.SDL_PointInRect(&point, &board_bound_box) == 0) {
+        return null;
+    }
+
+    // Calcuate column and row indices for array
+    const bbx = board_bound_box.x;
+    const bby = board_bound_box.y;
+
+    const col = @divTrunc((x - bbx), SQUARE_SIZE);
+    const row = @divTrunc((y - bby), SQUARE_SIZE);
+
+    return .{
+        .row = @intCast(row),
+        .col = @intCast(col),
+    };
+}
